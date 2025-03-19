@@ -1,0 +1,189 @@
+---
+title: "NinigretDiversity"
+author: "Cooper Kimball-Rhines"
+format: html
+editor: visual
+self-contained: TRUE
+---
+
+## Ninigret Sediment Placement Analysis
+
+The analyses in this document are based on data collected by Cathy Wigand (EPA) and Wenley Furgeson (Save the Bay) at the Ninigret Impact and Control sites between 2015 and 2020. Protocols for collecting the data are derived from Roman et al, 2001: http://www.nature.nps.gov/im/monitor/protocoldb.cfm.
+
+## Running Code
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r}
+#### Load libraries and data
+library(tidyverse)
+library(performance)
+library(broom.mixed)
+library(broom)
+library(emmeans)
+library(modelr)
+library(lme4)
+library(ggpubr)
+
+diversity <- read_csv("../data/ninigret_diversity.csv")
+summary(diversity)
+```
+
+You can add options to executable code like this
+
+```{r}
+# According to Kenney's paper, sediment placemnt happened in winter of 2016-2017
+# and plugs were planted in the growing season of 2017
+# So I'm going to create an extra column based on year saying if it's before or after treatment
+
+# Also, filter out 2017 so we're only looking at pre and post treatments
+diversity <- diversity |>
+  mutate(treatment = year) |>
+  filter(year != 2017,
+         Plot != "I1-74") #remove I1-74 because it did not receive treatment
+
+diversity$treatment <- ifelse(diversity$treatment < 2017, "pre", "applied")
+
+# Viz
+ggplot(data = diversity,
+       mapping = aes(x = treatment,
+                     y = shannon,
+                     color = Zone)) +
+  geom_boxplot() +
+  facet_wrap(vars(Zone))
+
+#### Modeling
+# I don't know if this should be an interaction effect or not! I keep going back and forth
+lmeShan <- lmer(data = diversity,
+                  shannon ~ Zone * treatment +
+                    (1|Plot))
+# Check model
+lmeShan
+check_predictions(lmeShan) |> plot()
+check_autocorrelation(lmeShan)
+check_heteroscedasticity(lmeShan) |> plot()
+check_outliers(lmeShan) |> plot() #Plot I1-74 was causing a huge problem, now it's mostly fixed
+
+# Query Model
+summary(lmeShan)
+broom.mixed::tidy(lmeShan)
+effectsize::effectsize(lmeShan)
+
+# This should really be done by Diff-in-diff but this looks promising!
+anova(lmeShan)
+confint(lmeShan)
+
+# Make a figure
+pal <- c("#34eb7a", "#2c8ad1")
+my_comparisons <- list(c("Post", "Pre"), c("Impact", "Control"))
+
+shanPlot <- ggplot(data = diversity,
+                   mapping = aes(x = Zone,
+                                 y = shannon,
+                                 fill = treatment)) +
+  geom_boxplot() +
+  stat_compare_means(method = "anova", paired = TRUE, label.y = 2.13) +
+  #stat_compare_means(comparisons = my_comparisons) +
+  scale_fill_manual(values = pal) +
+  labs(title = "Sediment Placement Effect \non Shannon Diversity") +
+  xlab("Treatment Group") +
+  ylab("Shannon Diversity Index") +
+  theme_pubr(base_size = 16)
+shanPlot # Keep
+
+```
+
+```{r}
+# Load new libraries
+library(tidyverse)
+library(modelsummary)
+library(fixest)
+library(ggpubr)
+
+# Load and mutate data to indicate treatment groups
+diversity <- read_csv("../data/ninigret_diversity.csv") |>
+  filter(Plot != "I1-74") |>
+  mutate(treated = Zone == 'Impact' &
+           year %in% c('2018', '2019', '2020'),
+         st = Zone == "Impact")
+summary(diversity)
+
+# Check paralell trends
+parTrends <- diversity |>
+  group_by(Zone, year) |>
+  summarize(m = mean(shannon))
+
+ggplot(data = parTrends,
+       mapping = aes(x = year, y = m, group = Zone, color = Zone)) +
+  geom_line()
+
+# According to Kenney's paper, sediment placemnt happened in winter of 2016-2017
+# and plugs were planted in the growing season of 2017.
+# I think it makes sense to filter out 2017 from the analysis -- so many plots had no veg
+
+diversity <- diversity |>
+  filter(year != 2017)
+
+# Build diff-in-diff model with Zone, year, and Plot set as fixed effects
+# (though really Plot should be a random effect)
+ninDif <- feols(shannon ~ treated | Zone + year + Plot,
+                data = diversity)
+ninDif
+
+# Summarize model stats
+msummary(ninDif, stars = c('*' = .1, '**' = .05, '***' = .01))
+
+#### Make a figure
+# Calculate effects on diversity for treated/untreated before/after treatment
+didLine <- diversity |>
+  group_by(st, year) |>
+  summarize(m = mean(shannon))
+
+didSeg <- diversity |>
+  group_by(st, year > 2017) |>
+  summarize(m = mean(shannon))
+
+
+# Create a plot showing the points for each plot in the background
+didPlot <- ggplot(diversity, mapping = aes(x = year,
+                                y = shannon,
+                                color = Zone, shape = Zone)) +
+  geom_point(position = position_jitter(width = .3, seed = 10), size = 2) +
+  geom_vline(aes(xintercept = 2017), linetype = 'dashed', linewidth = 0.5) +
+  scale_color_manual(labels = c("Control", "Impact"), values = c('darkorange', 'darkblue')) +
+  scale_shape_manual(values = c(3, 1)) +
+  theme_pubr() +
+  labs(x = "Year",
+       y = "Shannon Diversity Index",
+       title = "Sediment Placement Increases Plot Diversity") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Add in lines with different values for each year
+didPlotLines <- didPlot +
+  geom_line(aes(x = year, y = m),
+            data = didLine, linewidth = 1)
+
+# And lines showing the overall averages before and after treatment
+didPlotSegs <- didPlot +
+  geom_segment(aes(x = min(year), xend = 2017,
+                   y = didSeg$m[1], yend = didSeg$m[1]),
+               linewidth = 1.5, color = "darkorange", linetype = "dashed") +
+  
+  geom_segment(aes(x = 2017, xend = max(year),
+                   y = didSeg$m[2], yend = didSeg$m[2]),
+               linewidth = 1.5, color = "darkorange", linetype = "dashed") +
+  
+  geom_segment(aes(x = min(year), xend = 2017,
+                   y = didSeg$m[3], yend = didSeg$m[3]),
+               linewidth = 1.5, color = "darkblue") +
+  
+  geom_segment(aes(x = 2017, xend = max(year),
+                   y = didSeg$m[4], yend = didSeg$m[4]),
+               linewidth = 1.5, color = "darkblue") +
+  geom_text(x = 2017, y = 1.27, label = "Impact", color = "darkblue") +
+  geom_text(x = 2017, y = .9, label = "Control", color = "darkorange")
+
+didPlotSegs
+
+
+```
