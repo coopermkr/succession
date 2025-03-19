@@ -13,7 +13,7 @@ library(tidyverse)
 library(ggpubr)
 library(gridExtra)
 library(grid)
-
+# additional comment
 # Load and mutate data to indicate treatment groups
 diversity <- read_csv("data/ninigret_diversity.csv") |>
   filter(Plot != "I1-74") |>
