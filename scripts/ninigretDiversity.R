@@ -13,24 +13,31 @@ library(labdsv)
 library(Matrix)
 
 # Read in data
-ninigret <- read_csv("data/processed.csv") |>
-  select(!'...1')
+ninigret <- read_csv("data/tlp.csv")
 
 # Pivoting!
-ninLong <- ninigret |>
-  pivot_longer(cols = !c("Zone", "Plot", "Date", "year", 
-                         "Direction.of.plot", "Notes", "Bare",
-                         "Open.Water"),
-               names_to = "species",
-               values_to = "cover")
+ninFilt <- ninigret |>
+  # Filter out abiotic elements
+  filter(!species %in% c("Bare", "Burrows", "Open water", "Unknown Grass", "Open Water",
+                         "Thatch average of 5 measurements", "Thatch", "Unknown grass",
+                         "Unknonwn grass", "Fiddler Crab Burrows"),
+         # Filter out Quonnie plots
+         site == "ninigret",
+         # Filter out the plot that didn't receive treatment
+         Plot != "I1-74",
+         Plot != "I1-74*") |>
+  # Select out unimportant columns
+  select(!c("Date", "site", "Direction of plot")) |>
+  # Replace NA counts with 0
+  mutate(count = ifelse(is.na(count), 0, count))
 
 #### Richness ####
 # Change all cover values into 1s or 0s
-ninRich <- ninLong |>
-  mutate(cover = ifelse(cover > 0, 1, 0)) |>
+ninRich <- ninFilt |>
+  mutate(count = ifelse(count > 0, 1, 0)) |>
   # Group by year and subplot
   group_by(year, Plot, Zone) |>
-  summarize(richness = sum(cover))
+  summarize(richness = sum(count))
 
 head(ninRich)
 
@@ -43,16 +50,21 @@ ggplot(data= ninRich,
 
 #### Diversity ####
 # Note: Vegan requires data in wide format with each species in a column
-veganized <- ninigret |>
+ninWide <- ninFilt |>
+  pivot_wider(names_from = species,
+              values_from = count,
+              values_fill = 0)
+
+veganized <- ninWide |>
   #Calculate Shannon's
-  mutate(shannon = diversity(ninigret[, -c(1:9)],
+  mutate(shannon = diversity(ninWide[, -c(1:4)],
                              index = "shannon")) |>
   
   #Calculate Simpson's
-  mutate(simpson = diversity(ninigret[, -c(1:9)],
+  mutate(simpson = diversity(ninWide[, -c(1:4)],
                              index = "simpson")) |>
   #Calculate Pielou's Evenness (from Shannon's)
-  mutate(evenness = shannon/log(specnumber(ninigret[, -c(1:9)]))) |>
+  mutate(evenness = shannon/log(specnumber(ninWide[, -c(1:4)]))) |>
   
   select(Zone, Plot, year, shannon, simpson, evenness)
 
@@ -78,4 +90,4 @@ ggplot(data = veganized,
   facet_wrap(vars(year))
 
 # Write diversity data to .csv
-write.csv(x = veganized, file = "data/ninigret_diversity.csv")
+write_csv(x = veganized, file = "data/ninigret_diversity.csv")

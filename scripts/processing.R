@@ -11,42 +11,77 @@
 
 #Load in useful libraries
 library(tidyverse)
-library(readxl)
-library(openxlsx)
 
-# Start master sheet with 2015
-allSheets <- read.csv("data/2015.csv")
+# Load in a test sheet
+nin2015 <- read_csv("data/ninigret/ninigret_2015.csv")
 
 #Apply formatting fixes to get rid of extra rows and columns
-allSheets <- allSheets |>
+nin2015 <- nin2015 |>
   filter(Zone != "") |>
-  select(!starts_with("X")) |>
+  select(!starts_with("...")) |>
   mutate(year = "2015")
 
+# pivot to join with other sheets
+nin2015Long <- nin2015 |>
+  # Note, we're carrying the bare and open water measurements into the species column
+  pivot_longer(cols = !c("Zone", "Plot", "Date", "Direction of plot", "Notes", "year"),
+               names_to = "species",
+               values_to = "count")
+
 # Write a function to automate processing and joining of all sheets
-combo <- function(year){
-  
-  # Load in sheet selected by year variable and edit out extra cells
-  sheet <- read.csv(paste("data/", year, ".csv", sep="")) |>
-    filter(Zone != "") |>
-    select(!starts_with("X")) |>
-    mutate(year = as.numeric(year))
-  
-  # Join selected sheet into master sheet by column
-  allSheets <<- allSheets |>
-    full_join(sheet)
-  print(nrow(allSheets))
+proc <- function(site, year) {
+    sheet <- read_csv(paste("data/", site, "/", site, "_", year, ".csv", sep="")) |>
+      select(!starts_with("...")) |>
+      filter(Zone != "") |>
+      mutate(year = year,
+             site = site) |>
+      
+      # pivot to combine
+      pivot_longer(cols = !c("Zone", "Plot", "Date", "Direction of plot", "Notes", 
+                             "year", "site"),
+                   names_to = "species",
+                   values_to = "count")
 }
-combo("2015")
-# Now check which columns didn't properly join and go back and fix them in the csv
 
-# Iterate over all of the years using lapply
-sheetList <- c("2016", "2017", "2018", "2019", "2020")
-lapply(sheetList, combo)
+# Iterate over each year.csv
+nin <- map2(.x = "ninigret", .y = 2015:2023, .f = proc) |> list_rbind()
 
-# Replace NAs with 0s
-allSheets[is.na(allSheets)] <- 0
-View(allSheets)
 
-# Write processed sheet to a file
-write.csv(x = allSheets, file = "data/processed.csv")
+##### Quonnie
+# Load in a test sheet
+qTest <- read_csv("data/quonnie/quonnie_2024.csv", na = "0")
+str(qTest)
+#Apply formatting fixes to get rid of extra rows and columns
+qTest <- qTest |>
+  filter(Zone != "") |>
+  select(!c(starts_with("..."), `Plot Elevation`)) |>
+  mutate(year = "2018")
+
+# pivot to join with other sheets
+qTestLong <- qTest |>
+  # Note, we're carrying the bare and open water measurements into the species column
+  pivot_longer(cols = !c("Zone", "Plot", "Date", "Direction of plot", "Notes", "year"),
+               names_to = "species",
+               values_to = "count")
+
+# Write a function to automate processing and joining of all sheets
+proc <- function(site, year) {
+  sheet <- read_csv(paste("data/", site, "/", site, "_", year, ".csv", sep="")) |>
+    filter(Zone != "") |>
+    select(!c(starts_with("..."), `Plot Elevation`)) |>
+    mutate(year = year,
+           site = site,
+           `Gerardia maritima` = as.double(`Gerardia maritima`)) |>
+    
+    # pivot to combine
+    pivot_longer(cols = !c("Zone", "Plot", "Date", "Direction of plot", "Notes", 
+                           "year", "site"),
+                 names_to = "species",
+                 values_to = "count")
+}
+
+quo <- map2(.x = "quonnie", .y = 2018:2023, .f = proc) |> list_rbind()
+
+# Combine files and write out
+rbind(nin, quo) |>
+  write_csv(file = "data/tlp.csv")
