@@ -77,7 +77,7 @@ ptPlot <- ggdid(trendAssess, grtitle = "Year", group = NULL) +
   clean_theme() +
   theme_pubr(base_size = 16)+
   theme(plot.title = element_text(hjust = 0.5)) +
-  scale_color_manual(labels = c("Untreated", "Treated"), values = c('darkorange', 'darkgreen'))
+  scale_color_manual(labels = c("Untreated", "Treated"), values = c('#BD288B', '#28BD5A'))
   
 
 png("out/parTrends.png", width = 800, height = 600)
@@ -107,7 +107,7 @@ didErrorPlot <- ggplot(data = didEB,
   theme(plot.title = element_text(hjust = 0.5)) +
   geom_vline(aes(xintercept = 2017), linetype = 'dashed', linewidth = 0.5) +
   scale_color_manual(labels = c("Untreated", "Treated"), 
-                     values = c('darkorange', 'darkgreen'), name = NULL)
+                     values = c('#BD288B', '#28BD5A'), name = NULL)
 
 
 png("out/didErrorbar.png", width = 800, height = 600)
@@ -130,7 +130,7 @@ didPlot <- diversity |>
   geom_point(position = position_jitter(width = .5, seed = 10), size = 1, alpha = 0.9) +
   geom_vline(aes(xintercept = 2017), linetype = 'dashed', linewidth = 0.5) +
   scale_color_manual(labels = c("Untreated", "Treated"), 
-                     values = c('darkorange', 'darkgreen'), name = NULL) +
+                     values = c('#BD288B', '#28BD5A'), name = NULL) +
   scale_shape_manual(labels = c("Untreated", "Treated"), 
                      values = c(0, 2), name = NULL) +
   theme_pubr() +
@@ -149,7 +149,7 @@ didPlotSegs <- didPlot +
   
   geom_segment(aes(x = min(year), xend = 2017,
                    y = didSeg$m[1], yend = didSeg$m[1]),
-               linewidth = 1, color = "darkorange", linetype = "dashed") +
+               linewidth = 1, color = "#BD288B", linetype = "dashed") +
   
   #Unaffected Posttreatment
   geom_rect(xmin = 2017, xmax = 2023,
@@ -159,7 +159,7 @@ didPlotSegs <- didPlot +
   
   geom_segment(aes(x = 2017, xend = max(year),
                    y = didSeg$m[2], yend = didSeg$m[2]),
-               linewidth = 1, color = "darkorange", linetype = "dashed") +
+               linewidth = 1, color = "#BD288B", linetype = "dashed") +
   
   # Affected Pretreatment
   geom_rect(xmin = 2015, xmax = 2017,
@@ -169,7 +169,7 @@ didPlotSegs <- didPlot +
   
   geom_segment(aes(x = min(year), xend = 2017,
                    y = didSeg$m[3], yend = didSeg$m[3]),
-               linewidth = 1, color = "darkgreen", linetype = "dashed") +
+               linewidth = 1, color = "#28BD5A", linetype = "dashed") +
   
   # Affected Posttreatment
   geom_rect(xmin = 2017, xmax = 2023,
@@ -179,11 +179,11 @@ didPlotSegs <- didPlot +
   
   geom_segment(aes(x = 2017, xend = max(year),
                    y = didSeg$m[4], yend = didSeg$m[4]),
-               linewidth = 1, color = "darkgreen", linetype = "dashed") +
+               linewidth = 1, color = "#28BD5A", linetype = "dashed") +
   
   # Add labels
-  geom_text(x = 2017, y = 0.9, label = "Untreated", color = "darkorange") +
-  geom_text(x = 2017, y = 1.3, label = "Treated", color = "darkgreen") +
+  geom_text(x = 2017, y = 0.9, label = "Untreated", color = "#BD288B") +
+  geom_text(x = 2017, y = 1.3, label = "Treated", color = "#28BD5A") +
   labs(title = "Unadjusted Means")
 
 didPlotSegs
@@ -197,7 +197,7 @@ didAdjusted <- didPlot +
   
   geom_segment(aes(x = min(year), xend = 2017,
                    y = didSeg$m[1], yend = didSeg$m[1]),
-               linewidth = 1, color = "darkorange", linetype = "dashed") +
+               linewidth = 1, color = "#BD288B", linetype = "dashed") +
   
   #Unaffected Posttreatment
   geom_rect(xmin = 2017, xmax = 2023,
@@ -208,7 +208,7 @@ didAdjusted <- didPlot +
   geom_segment(aes(x = 2017, xend = max(year),
                    y = (didSeg$m[2]-(didSeg$m[2]-didSeg$m[1])), 
                    yend = didSeg$m[2]-(didSeg$m[2]-didSeg$m[1])),
-               linewidth = 1, color = "darkorange", linetype = "dashed") +
+               linewidth = 1, color = "#BD288B", linetype = "dashed") +
   
   # Affected Pretreatment
   geom_rect(xmin = 2015, xmax = 2017,
@@ -218,7 +218,7 @@ didAdjusted <- didPlot +
   
   geom_segment(aes(x = min(year), xend = 2017,
                    y = didSeg$m[3], yend = didSeg$m[3]),
-               linewidth = 1, color = "darkgreen", linetype = "dashed") +
+               linewidth = 1, color = "#28BD5A", linetype = "dashed") +
   
   # Affected Posttreatment
   geom_rect(xmin = 2017, xmax = 2023,
@@ -229,11 +229,11 @@ didAdjusted <- didPlot +
   geom_segment(aes(x = 2017, xend = max(year),
                    y = (didSeg$m[4]-(didSeg$m[2]-didSeg$m[1])), 
                    yend = (didSeg$m[4]-(didSeg$m[2]-didSeg$m[1]))),
-               linewidth = 1, color = "darkgreen", linetype = "dashed") +
+               linewidth = 1, color = "#28BD5A", linetype = "dashed") +
   
   # Add Labels
-  geom_text(x = 2017, y = 0.95, label = "Untreated", color = "darkorange") +
-  geom_text(x = 2017, y = 1.45, label = "Treated", color = "darkgreen") +
+  geom_text(x = 2017, y = 0.95, label = "Untreated", color = "#BD288B") +
+  geom_text(x = 2017, y = 1.45, label = "Treated", color = "#28BD5A") +
   labs(title = "Adjusted Means")
 
 didAdjusted
@@ -261,7 +261,7 @@ didPlot <- ggplot(diversity, mapping = aes(x = year,
                                 color = Zone, shape = Zone)) +
   geom_point(position = position_jitter(width = .3, seed = 10), size = 2) +
   geom_vline(aes(xintercept = 2017), linetype = 'dashed', linewidth = 0.5) +
-  scale_color_manual(labels = c("Control", "Impact"), values = c('darkorange', 'darkgreen')) +
+  scale_color_manual(labels = c("Control", "Impact"), values = c('#BD288B', '#28BD5A')) +
   scale_shape_manual(values = c(3, 1)) +
   theme_pubr() +
   labs(x = "Year",
@@ -277,21 +277,21 @@ didPlotLines <- didPlot +
 didPlotSegs <- didPlot +
   geom_segment(aes(x = min(year), xend = 2017,
                    y = didSeg$m[1], yend = didSeg$m[1]),
-               linewidth = 1.5, color = "darkorange", linetype = "dashed") +
+               linewidth = 1.5, color = "#BD288B", linetype = "dashed") +
   
   geom_segment(aes(x = 2017, xend = max(year),
                    y = didSeg$m[2], yend = didSeg$m[2]),
-               linewidth = 1.5, color = "darkorange", linetype = "dashed") +
+               linewidth = 1.5, color = "#BD288B", linetype = "dashed") +
   
   geom_segment(aes(x = min(year), xend = 2017,
                    y = didSeg$m[3], yend = didSeg$m[3]),
-               linewidth = 1.5, color = "darkgreen") +
+               linewidth = 1.5, color = "#28BD5A") +
   
   geom_segment(aes(x = 2017, xend = max(year),
                    y = didSeg$m[4], yend = didSeg$m[4]),
-               linewidth = 1.5, color = "darkgreen") +
-  geom_text(x = 2017, y = 1.35, label = "Impact", color = "darkgreen") +
-  geom_text(x = 2017, y = .9, label = "Control", color = "darkorange") +
+               linewidth = 1.5, color = "#28BD5A") +
+  geom_text(x = 2017, y = 1.35, label = "Impact", color = "#28BD5A") +
+  geom_text(x = 2017, y = .9, label = "Control", color = "#BD288B") +
   labs(title = "Unadjusted Means")
 
 didPlotSegs
@@ -301,23 +301,23 @@ didPlotSegs
 didAdjusted <- didPlot +
   geom_segment(aes(x = min(year), xend = 2017,
                    y = didSeg$m[1], yend = didSeg$m[1]),
-               linewidth = 1.5, color = "darkorange", linetype = "dashed") +
+               linewidth = 1.5, color = "#BD288B", linetype = "dashed") +
   
   geom_segment(aes(x = 2017, xend = max(year),
                    y = (didSeg$m[2]-(didSeg$m[2]-didSeg$m[1])), 
                    yend = didSeg$m[2]-(didSeg$m[2]-didSeg$m[1])),
-               linewidth = 1.5, color = "darkorange", linetype = "dashed") +
+               linewidth = 1.5, color = "#BD288B", linetype = "dashed") +
   
   geom_segment(aes(x = min(year), xend = 2017,
                    y = didSeg$m[3], yend = didSeg$m[3]),
-               linewidth = 1.5, color = "darkgreen") +
+               linewidth = 1.5, color = "#28BD5A") +
   
   geom_segment(aes(x = 2017, xend = max(year),
                    y = (didSeg$m[4]-(didSeg$m[2]-didSeg$m[1])), 
                    yend = (didSeg$m[4]-(didSeg$m[2]-didSeg$m[1]))),
-               linewidth = 1.5, color = "darkgreen") +
-  geom_text(x = 2017, y = 1.35, label = "Impact", color = "darkgreen") +
-  geom_text(x = 2017, y = .9, label = "Control", color = "darkorange") +
+               linewidth = 1.5, color = "#28BD5A") +
+  geom_text(x = 2017, y = 1.35, label = "Impact", color = "#28BD5A") +
+  geom_text(x = 2017, y = .9, label = "Control", color = "#BD288B") +
   labs(title = "Diff-In-Diff Adjusted Means")
 
 didAdjusted

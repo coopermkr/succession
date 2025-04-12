@@ -66,10 +66,11 @@ marshWide <- allMarsh |>
   select(!c(`Setaria spp.`, `Pluchea purpura-scens`, `Cyperus (umbrella sedge)`,
             `Agalinis maritima`))
 
-# Calculate Bray-Curtis Dissimilarity matrix
+#### Calculate Bray-Curtis Dissimilarity matrix
 library(ecodist)
-dist <- ecodist::bcdist(marshWide[,-c(1:5)])
+dist <- ecodist::bcdist(marshWide[,-c(1:5)], rmzero = 0)
 summary(dist) # No NAs- performs better than vegan
+dim(dist)
 
 # Store metadata
 sites <- marshWide$grp
@@ -104,3 +105,25 @@ ggplot(data = mdsPoints,
        mapping = aes(x = x, y = y, color = site)) +
   geom_point(size = 3) +
   theme_classic()
+
+#### Construct a heatmap
+lengths <- trajectoryLengths2D(dist, sites = sites, surveys = surveys)
+
+
+#### Quality Analysis
+spec <- as.matrix(marshWide[,-c(1:5)])
+rownames(spec) <- marshWide$Plot
+
+qdist <- ecodist::bcdist(spec)
+
+# Define the reference envelope
+marshWide <- marshWide |>
+  mutate(ref = site %in% c("Coggeshall", "nag"))
+
+marshEnv <- marshWide$Plot[marshWide$site]
+
+# Assess distance to envelope
+marshAssess <- compareToStateEnvelope(dist, marshEnv, m = 1.7, distance_to_envelope = TRUE)
+rownames(spec)
+
+

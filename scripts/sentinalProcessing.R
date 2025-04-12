@@ -6,11 +6,12 @@
 #' 
 #''''''''''''''''''''''''''''''''''''''''''
 
-
 # Load libraries
 library(tidyverse)
 
-test <- read_csv("data/nag/nag_2008.csv")
+test <- read_csv("data/nag/nag_2008.csv") |>
+  rename(Plot = `...1`) |>
+  t()
 
 # The structure of the individual csv files is like this:
 # site/site_year.csv
@@ -20,7 +21,7 @@ proc <- function(site, year) {
     select(`...1`, starts_with("T")) |>
     rename(species = `...1`) |>
     mutate(year = year,
-           site = site) 
+           site = site)
 }
 
 nag <- map2(.x = "nag", .y = 2015:2024, .f = proc) |> list_rbind()
