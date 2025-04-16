@@ -160,7 +160,9 @@ mds2023 <- endmdsPoints |>
   theme(plot.title = element_text(hjust = 0.5)) +
   scale_color_manual(labels = c("Drowning Control", "Drowning Treated", "Sentinel"), 
                      values = c('#BD288B', '#28BD5A', '#2841BD'), name = NULL) +
-  scale_shape_manual(values = c(16, 17, 15), name = NULL)
+  scale_shape_manual(values = c(16, 17, 15), name = NULL) +
+  scale_y_reverse()
+  
 
 
 # Create panel plot
